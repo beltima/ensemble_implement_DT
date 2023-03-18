@@ -1,10 +1,10 @@
 # ensemble_implement_DT
-Final Project for Ensemble Learning 
-M.Sc. in Data Sciences and Business Analytics
-CentraleSupélec
-Co-Author: 
+Final Project for Ensemble Learning  
+M.Sc. in Data Sciences and Business Analytics  
+CentraleSupélec  
+Co-Author:  
 - Alexander MAISURADZE
-- Arun JEGATHESH @arunjegathesh
+- Arun JEGATHESH [@arunjegathesh] https://github.com/arunjegathesh  
 - Priyam DASGUPTA
 
 ## The final code for submission is: 
