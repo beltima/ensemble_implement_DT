@@ -4,7 +4,7 @@ M.Sc. in Data Sciences and Business Analytics
 CentraleSupélec
 Co-Author: 
 - Alexander MAISURADZE
-- Arun JEGATHESH
+- Arun JEGATHESH @arunjegathesh
 - Priyam DASGUPTA
 
 ## The final code for submission is: 
