@@ -1,11 +1,11 @@
 # ensemble_implement_DT
-Final Project for Ensemble Learning 
-M.Sc. in Data Sciences and Business Analytics
-CentraleSupélec
-Co-Author: 
-- Alexander MAISURADZE
-- Arun JEGATHESH @arunjegathesh
-- Priyam DASGUPTA
+Final Project for Ensemble Learning  
+M.Sc. in Data Sciences and Business Analytics  
+CentraleSupélec  
+Co-Author:  
+- Alexander MAISURADZE [@Sunnymais] https://github.com/Sunnymais 
+- Arun JEGATHESH [@arunjegathesh] https://github.com/arunjegathesh  
+- Priyam DASGUPTA [@Priyam95] https://github.com/Priyam95 
 
 ## The final code for submission is: 
 - Implementation_of_DT.ipynb
