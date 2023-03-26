@@ -5,7 +5,9 @@ import numpy as np
 from sklearn.datasets import load_breast_cancer #using the breast cancer dataset 
 from sklearn.model_selection import train_test_split 
 from sklearn.metrics import accuracy_score
+from sklearn.datasets import load_diabetes
 
+###### -----------classification tree functions----------- #####
 def entropy(y):
     unique, counts = np.unique(y, return_counts=True) #count the unique value occurence in y
     p = counts / len(y) #where p is the prob of the unique value in y
@@ -111,25 +113,146 @@ def build_tree_string(node, feature_names, target_names, depth=0):
 #         print_tree(node['right'], feature_names, target_names, depth+1)
 
 
-header = st.container()
-dashboard = st.container()
+###### -----------regression tree functions----------- #####
+# Define the mean squared error (MSE) function
+def mse(y):
+    return np.mean((y - np.mean(y))**2)
+
+# Define a function to split the data into left and right subsets based on a threshold
+def split(X, y, feature_idx, threshold):
+    left_indices = np.where(X[:, feature_idx] <= threshold)[0]
+    right_indices = np.where(X[:, feature_idx] > threshold)[0]
+    if len(left_indices) == 0 or len(right_indices) == 0:
+        return None, None, None, None
+    else:
+        return X[left_indices], y[left_indices], X[right_indices], y[right_indices]
+
+# Define a function to find the best split based on minimizing the MSE
+def best_split(X, y, min_samples_split_set=2):
+    best_feature_idx, best_threshold, best_mse = None, None, np.inf
+    # Loop through all the features in X
+    for feature_idx in range(X.shape[1]):
+        # Find all the unique values of the feature
+        thresholds = np.unique(X[:, feature_idx])
+        # Loop through all the unique values of the feature
+        for threshold in thresholds:
+            # Split the data into left and right subsets based on the threshold
+            X_left, y_left, X_right, y_right = split(X, y, feature_idx, threshold)
+            # Check that the split is valid (i.e. neither the left nor right subset is empty)
+            if y_left is not None and y_right is not None:
+                # Check that the number of samples in each subset is greater than or equal to min_samples_split_set
+                if len(y_left) < min_samples_split_set or len(y_right) < min_samples_split_set:
+                    continue
+                # Calculate the total MSE of the left and right subsets
+                total_mse = mse(y_left) + mse(y_right)
+                # Update the best split if the total MSE is lower than the current best MSE
+                if total_mse < best_mse:
+                    best_feature_idx, best_threshold, best_mse = feature_idx, threshold, total_mse
+    return best_feature_idx, best_threshold
+# Define a function to build the decision tree recursively
+def build_tree_regression(X, y, depth, max_depth, min_samples_split):
+    # Check if the maximum depth has been reached or if there is no further reduction in MSE
+    if depth == max_depth or mse(y) == 0 or len(X) < min_samples_split:
+        # Return the mean target value
+        return np.mean(y)
+    # Find the best split based on minimizing the MSE
+    feature_idx, threshold = best_split(X, y)
+    # Check if there is no valid split
+    if feature_idx is None:
+        # Return the mean target value
+        return np.mean(y)
+    # Split the data into left and right subsets based on the best split
+    else:
+        X_left, y_left, X_right, y_right = split(X, y, feature_idx, threshold)
+        # Recursively build the left and right subtrees
+        left_tree = build_tree_regression(X_left, y_left, depth+1, max_depth, min_samples_split)
+        right_tree = build_tree_regression(X_right, y_right, depth+1, max_depth, min_samples_split)
+        # Return the decision node with the best split and the left and right subtrees
+        return (feature_idx, threshold, left_tree, right_tree)
+# Define a function to make predictions for a single input using the decision tree
+
+
+def predict_one(x, tree):
+    # Check if the current node is a leaf node (i.e. a float value)
+    if isinstance(tree, float):
+        # Return the mean target value of the leaf node
+        return tree
+    
+    # Check which subtree to go down based on the feature value of the current data point
+    else:
+        feature_idx, threshold, left_tree, right_tree = tree
+        if x[feature_idx] <= threshold:
+            # Recursively go down the left subtree
+            return predict_one(x, left_tree)
+        else:
+            # Recursively go down the right subtree
+            return predict_one(x, right_tree)
+
+
+# A function to predict the target values of multiple data points using a decision tree
+def predict_regression(X, tree):
+    # Predict the target value of each data point using the predict_one function
+    return np.array([predict_one(x, tree) for x in X])
+
+
+# A function to build a decision tree for regression
+def decision_tree_regression(X_train, y_train, max_depth, min_samples_split_set):
+    # Build the decision tree using the build_tree function
+    tree = build_tree_regression(X_train, y_train, 0, max_depth, min_samples_split_set)
+    # Predict the target values of the training set using the predict function
+    y_pred = predict_regression(X_train, tree)
+    # Return the decision tree and the predicted target values of the training set
+    return tree, y_pred
+
+def print_tree_regression(node, feature_names, target_names, depth=0):
+    indent = '  ' * depth
+    if isinstance(node, float):
+        print(f"{indent}*[{node:.3f}]")
+    else:
+        feature_name = feature_names[node[0]]
+        print(f"{indent}[{feature_name} < {node[1]:.3f}]")
+        print_tree_regression(node[2], feature_names, target_names, depth+1)
+        print_tree_regression(node[3], feature_names, target_names, depth+1)
+
+def build_regression_tree_string(node, feature_names, target_names, depth=0):
+    indent = '  ' * depth
+    if isinstance(node, float):
+        return f"{indent}*[{node:.3f}]\n"
+    else:
+        feature_name = feature_names[node[0]]
+        left_subtree = build_regression_tree_string(node[2], feature_names, target_names, depth+1)
+        right_subtree = build_regression_tree_string(node[3], feature_names, target_names, depth+1)
+        return f"{indent}[{feature_name} < {node[1]:.3f}]\n{left_subtree}{right_subtree}"
+
+
+
+
+###### -----------start code----------- #####
+
+header_classification = st.container()
+dashboard_classification = st.container()
+header_regression = st.container()
+dashboard_regression = st.container()
+
 
 @st.cache_data
 def get_data():
     X_bc, y_bc = load_breast_cancer(return_X_y=True)
     X_train_bc, X_test_bc, y_train_bc, y_test_bc = train_test_split(X_bc, y_bc, test_size=0.2, random_state=42)
-    return X_train_bc, X_test_bc, y_train_bc, y_test_bc
+    diabetes = load_diabetes()
+    X, y = diabetes.data, diabetes.target
+    return X_train_bc, X_test_bc, y_train_bc, y_test_bc, X, y
 
-X_train_bc, X_test_bc, y_train_bc, y_test_bc = get_data()
+X_train_bc, X_test_bc, y_train_bc, y_test_bc, X, y = get_data()
 
-with header: 
+with header_classification: 
     st.title('Implementation of a decision tree')
     st.header('Classification Tree')
     # st.text('time 1500') #time stamp to check if streamlit web app is updated
     st.text(' ')
 
-with dashboard: 
-    st.write('Parameters for the tree are: max_depth and min_samples_split')
+with dashboard_classification: 
+    st.write('Parameters for the classification tree are: max_depth and min_samples_split')
     max_depth_set = st.slider('The maximum depth of the decision tree is ', min_value = 1, max_value = 10, value = 5, step = 1)
     min_samples_split_set = st.slider('The minimum sample of a leaf in a split is ', min_value = 1, max_value = 20, value = 10, step = 1)
     st.write('max_depth_set is ', max_depth_set)
@@ -144,4 +267,32 @@ with dashboard:
 
     st.write('This is the trained tree result ')
     tree_str = build_tree_string(tree_bc, load_breast_cancer().feature_names, load_breast_cancer().target_names)
+    st.text(tree_str)
+
+with header_regression: 
+    st.header('Regression Tree')
+    st.text(' ')
+
+with dashboard_regression: 
+    st.write('Parameters for the regression tree are: max_depth and min_samples_split')
+    max_depth_set_regression = st.slider('The maximum depth of the decision tree is ', min_value = 1, max_value = 10, value = 2, step = 1, key='slider_key_regression_1')
+    min_samples_split_set_regression = st.slider('The minimum sample of a leaf in a split is ', min_value = 1, max_value = 20, value = 10, step = 1, key='slider_key_regression_2')
+    st.write('max_depth_set is ', max_depth_set_regression)
+    st.write('min_samples_split_set is ', min_samples_split_set_regression)
+    st.write(' ')
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    max_depth = max_depth_set_regression
+    min_samples_split_set = min_samples_split_set_regression
+    tree_regression, y_pred_train = decision_tree_regression(X_train, y_train, max_depth, min_samples_split_set)
+
+    # Make predictions on the testing set
+    y_pred_test = predict_regression(X_test, tree_regression)
+
+    tree_final_regression = build_tree_regression(X, y, 0, max_depth=max_depth_set_regression,min_samples_split=min_samples_split_set_regression)
+    target_names = ['target']
+    feature_names = load_diabetes().feature_names
+    tree_str = build_regression_tree_string(tree_final_regression, feature_names, target_names)
     st.text(tree_str)
